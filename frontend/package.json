@@ -18,9 +18,18 @@
     "vite": "^7.2.4"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^7.1.0",
+    "@heroicons/react": "^1.0.6",
     "@vitejs/plugin-react": "^5.1.1",
+    "axios": "^1.13.2",
+    "date-fns": "^4.1.0",
+    "framer-motion": "^12.23.26",
+    "jwt-decode": "^4.0.0",
+    "lucide-react": "^0.562.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-router-dom": "^7.9.6"
+    "react-icons": "^5.5.0",
+    "react-router-dom": "^7.9.6",
+    "recharts": "^3.6.0"
   }
 }

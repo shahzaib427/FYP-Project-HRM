@@ -1,3 +1,4 @@
+// contexts/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
@@ -11,56 +12,84 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuth = () => {
+    console.log('🔍 AuthProvider: Checking localStorage on mount...');
+    
+    // Check for token in localStorage
+    const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+    const userStr = localStorage.getItem('user');
+    
+    console.log('📦 Found in localStorage:');
+    console.log('- token:', token ? 'Yes' : 'No');
+    console.log('- user:', userStr);
+    
+    if (token && userStr) {
       try {
-        // Check localStorage for saved user - using 'user' key
-        const savedUser = localStorage.getItem('user');
-        if (savedUser) {
-          setUser(JSON.parse(savedUser));
-        }
+        const user = JSON.parse(userStr);
+        console.log('✅ AuthProvider: Setting currentUser from localStorage:', user);
+        setCurrentUser(user);
       } catch (error) {
-        console.error('Error loading user data:', error);
-      } finally {
-        setLoading(false);
+        console.error('❌ AuthProvider: Error parsing user from localStorage:', error);
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        localStorage.removeItem('authToken');
       }
-    };
-
-    checkAuth();
+    } else {
+      console.log('❌ AuthProvider: No valid auth data found in localStorage');
+    }
+    
+    setLoading(false);
   }, []);
 
-  const login = (userData) => {
-    setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
+  const login = (user, token) => {
+    console.log('🔐 AuthContext.login called with:', { user, token });
+    
+    if (!user || !token) {
+      console.error('❌ AuthContext.login: Missing user or token');
+      return;
+    }
+    
+    // Save to localStorage
+    localStorage.setItem('token', token);
+    localStorage.setItem('authToken', token); // Save both for compatibility
+    localStorage.setItem('user', JSON.stringify(user));
+    
+    // Update state
+    setCurrentUser(user);
+    
+    console.log('💾 AuthContext.login: Data saved to localStorage');
+    console.log('- token saved:', token.substring(0, 30) + '...');
+    console.log('- user saved:', user);
   };
 
   const logout = () => {
-    setUser(null);
+    console.log('🚪 AuthContext.logout: Clearing auth data');
+    localStorage.removeItem('token');
+    localStorage.removeItem('authToken');
     localStorage.removeItem('user');
+    setCurrentUser(null);
   };
 
-  const updateUser = (updatedData) => {
-    const updatedUser = { ...user, ...updatedData };
-    setUser(updatedUser);
-    localStorage.setItem('user', JSON.stringify(updatedUser));
+  const getToken = () => {
+    return localStorage.getItem('token') || localStorage.getItem('authToken');
   };
 
   const value = {
-    user,
+    currentUser,
     login,
     logout,
-    updateUser,
     loading,
-    isAuthenticated: !!user,
-    userRole: user?.role || null,
+    getToken
   };
+
+  console.log('🔄 AuthProvider rendering, currentUser:', currentUser, 'loading:', loading);
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 };
