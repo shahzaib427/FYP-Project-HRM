@@ -1,86 +1,299 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useAuth } from '../../contexts/AuthContext';
 
 const EmployeeProfile = () => {
-  const [employeeData, setEmployeeData] = useState({
-    personalInfo: {
-      fullName: 'John Doe',
-      employeeId: 'EMP2024001',
-      email: 'john.doe@company.com',
-      phone: '+91 9876543210',
-      dob: '1990-05-15',
-      gender: 'Male',
-      bloodGroup: 'O+',
-      maritalStatus: 'Married'
-    },
-    employmentInfo: {
-      designation: 'Senior Software Engineer',
-      department: 'Engineering',
-      dateOfJoining: '2020-06-01',
-      workLocation: 'Bangalore Office',
-      reportingManager: 'Alex Johnson',
-      employmentType: 'Full-time',
-      employeeStatus: 'Active'
-    },
-    contactInfo: {
-      address: '123 Main Street, Koramangala',
-      city: 'Bangalore',
-      state: 'Karnataka',
-      country: 'India',
-      pincode: '560034',
-      emergencyContact: '+91 8765432109',
-      emergencyName: 'Jane Doe (Spouse)'
-    },
-    bankDetails: {
-      accountNumber: '********1234',
-      bankName: 'HDFC Bank',
-      branch: 'Koramangala Branch',
-      ifscCode: 'HDFC0001234',
-      accountType: 'Savings'
-    }
-  });
-
-  const [skills, setSkills] = useState([
-    { id: 1, name: 'React', level: 'Expert', category: 'Frontend', color: 'bg-gradient-to-r from-cyan-500 to-blue-500' },
-    { id: 2, name: 'Node.js', level: 'Advanced', category: 'Backend', color: 'bg-gradient-to-r from-green-500 to-emerald-500' },
-    { id: 3, name: 'MongoDB', level: 'Intermediate', category: 'Database', color: 'bg-gradient-to-r from-amber-500 to-orange-500' },
-    { id: 4, name: 'AWS', level: 'Intermediate', category: 'Cloud', color: 'bg-gradient-to-r from-purple-500 to-pink-500' },
-    { id: 5, name: 'Git', level: 'Expert', category: 'Tools', color: 'bg-gradient-to-r from-red-500 to-rose-500' },
-    { id: 6, name: 'Docker', level: 'Beginner', category: 'DevOps', color: 'bg-gradient-to-r from-indigo-500 to-blue-500' }
-  ]);
-
-  const [documents, setDocuments] = useState([
-    { id: 1, name: 'Resume', type: 'PDF', uploadDate: '2024-01-15', size: '1.2 MB', status: 'verified', icon: '📄', color: 'bg-gradient-to-r from-blue-100 to-blue-50' },
-    { id: 2, name: 'Aadhar Card', type: 'PDF', uploadDate: '2024-01-10', size: '0.8 MB', status: 'verified', icon: '🆔', color: 'bg-gradient-to-r from-green-100 to-green-50' },
-    { id: 3, name: 'PAN Card', type: 'PDF', uploadDate: '2024-01-10', size: '0.5 MB', status: 'verified', icon: '💳', color: 'bg-gradient-to-r from-yellow-100 to-yellow-50' },
-    { id: 4, name: 'Experience Letter', type: 'PDF', uploadDate: '2024-01-12', size: '1.5 MB', status: 'pending', icon: '📝', color: 'bg-gradient-to-r from-purple-100 to-purple-50' },
-    { id: 5, name: 'Degree Certificate', type: 'PDF', uploadDate: '2024-01-08', size: '2.1 MB', status: 'verified', icon: '🎓', color: 'bg-gradient-to-r from-pink-100 to-pink-50' }
-  ]);
-
-  const [workHistory, setWorkHistory] = useState([
-    { id: 1, company: 'Tech Solutions Inc', position: 'Software Engineer', duration: '2018-2020', location: 'Mumbai', color: 'bg-gradient-to-r from-blue-100 to-cyan-100' },
-    { id: 2, company: 'Digital Innovations', position: 'Web Developer', duration: '2016-2018', location: 'Delhi', color: 'bg-gradient-to-r from-green-100 to-emerald-100' },
-    { id: 3, company: 'StartUp Labs', position: 'Junior Developer', duration: '2015-2016', location: 'Bangalore', color: 'bg-gradient-to-r from-purple-100 to-pink-100' }
-  ]);
-
-  const [education, setEducation] = useState([
-    { id: 1, degree: 'MCA', institution: 'IIT Delhi', year: '2015', grade: '8.5/10', color: 'bg-gradient-to-r from-blue-50 to-cyan-50' },
-    { id: 2, degree: 'BCA', institution: 'Delhi University', year: '2012', grade: '8.0/10', color: 'bg-gradient-to-r from-green-50 to-emerald-50' },
-    { id: 3, degree: 'Higher Secondary', institution: 'Kendriya Vidyalaya', year: '2009', grade: '85%', color: 'bg-gradient-to-r from-purple-50 to-pink-50' }
-  ]);
-
-  const [achievements, setAchievements] = useState([
-    { id: 1, title: 'Employee of the Month', date: 'Dec 2023', description: 'Outstanding performance in Q4 projects', icon: '🏆', color: 'bg-gradient-to-r from-yellow-100 to-amber-100' },
-    { id: 2, title: 'Best Innovation Award', date: 'Aug 2023', description: 'Developed automation tool saving 20hrs/week', icon: '💡', color: 'bg-gradient-to-r from-blue-100 to-cyan-100' },
-    { id: 3, title: 'AWS Certified', date: 'May 2023', description: 'AWS Certified Solutions Architect', icon: '☁️', color: 'bg-gradient-to-r from-orange-100 to-amber-100' },
-    { id: 4, title: '5 Years Service', date: 'Jun 2022', description: 'Completed 5 years with the company', icon: '⭐', color: 'bg-gradient-to-r from-purple-100 to-pink-100' }
-  ]);
-
+  const { currentUser } = useAuth();
+  const [employeeData, setEmployeeData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');
   const [uploadProgress, setUploadProgress] = useState(0);
   const [newSkill, setNewSkill] = useState({ name: '', level: 'Intermediate', category: 'Technical' });
 
-  // Clone functions
+  // Fetch employee data from API
+  useEffect(() => {
+    const fetchEmployeeData = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('authToken');
+        
+        // Fetch the logged-in user's profile data
+        const response = await axios.get('http://localhost:5000/api/employees/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.data.success) {
+          const data = response.data.data;
+          
+          // Format the data to match your component structure
+          setEmployeeData({
+            personalInfo: {
+              fullName: data.name || '',
+              employeeId: data.employeeId || `EMP${data._id?.substring(-4) || '0000'}`,
+              email: data.email || '',
+              phone: data.phone || '',
+              dob: data.dob || '1990-01-01',
+              gender: data.gender || 'Not specified',
+              bloodGroup: data.bloodGroup || 'Not specified',
+              maritalStatus: data.maritalStatus || 'Not specified'
+            },
+            employmentInfo: {
+              designation: data.position || '',
+              department: data.department || '',
+              dateOfJoining: data.dateOfJoining || data.createdAt?.split('T')[0] || '',
+              workLocation: data.workLocation || '',
+              reportingManager: data.reportingManager || 'Not assigned',
+              employmentType: data.employmentType || 'Full-time',
+              employeeStatus: data.isActive ? 'Active' : 'Inactive'
+            },
+            contactInfo: {
+              address: data.address || '',
+              city: data.city || '',
+              state: data.state || '',
+              country: data.country || '',
+              pincode: data.pincode || '',
+              emergencyContact: data.emergencyContact || '',
+              emergencyName: data.emergencyContactName || ''
+            },
+            bankDetails: {
+              accountNumber: data.accountNumber || '********1234',
+              bankName: data.bankName || '',
+              branch: data.branch || '',
+              ifscCode: data.ifscCode || '',
+              accountType: data.accountType || 'Savings'
+            }
+          });
+
+          // Fetch additional data if endpoints exist
+          await fetchAdditionalData(data._id, token);
+        }
+      } catch (err) {
+        console.error('Error fetching employee data:', err);
+        setError('Failed to load employee profile. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEmployeeData();
+  }, []);
+
+  // Fetch additional data (skills, documents, etc.)
+  const fetchAdditionalData = async (employeeId, token) => {
+    try {
+      // Fetch skills
+      const skillsRes = await axios.get(`http://localhost:5000/api/employees/${employeeId}/skills`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (skillsRes.data.success) {
+        setSkills(skillsRes.data.data.map(skill => ({
+          ...skill,
+          color: getSkillColor(skill.level)
+        })));
+      }
+
+      // Fetch documents
+      const docsRes = await axios.get(`http://localhost:5000/api/employees/${employeeId}/documents`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (docsRes.data.success) {
+        setDocuments(docsRes.data.data.map(doc => ({
+          ...doc,
+          icon: getDocumentIcon(doc.type),
+          color: getDocumentColor(doc.status)
+        })));
+      }
+
+      // Fetch work history
+      const workRes = await axios.get(`http://localhost:5000/api/employees/${employeeId}/work-history`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (workRes.data.success) {
+        setWorkHistory(workRes.data.data);
+      }
+
+      // Fetch education
+      const eduRes = await axios.get(`http://localhost:5000/api/employees/${employeeId}/education`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (eduRes.data.success) {
+        setEducation(eduRes.data.data);
+      }
+
+      // Fetch achievements
+      const achievementsRes = await axios.get(`http://localhost:5000/api/employees/${employeeId}/achievements`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (achievementsRes.data.success) {
+        setAchievements(achievementsRes.data.data);
+      }
+
+    } catch (error) {
+      console.error('Error fetching additional data:', error);
+      // Continue with default data if endpoints don't exist yet
+    }
+  };
+
+  // Helper functions for styling
+  const getSkillColor = (level) => {
+    switch(level) {
+      case 'Expert': return 'bg-gradient-to-r from-emerald-500 to-green-500';
+      case 'Advanced': return 'bg-gradient-to-r from-blue-500 to-cyan-500';
+      case 'Intermediate': return 'bg-gradient-to-r from-amber-500 to-orange-500';
+      default: return 'bg-gradient-to-r from-gray-500 to-gray-600';
+    }
+  };
+
+  const getDocumentIcon = (type) => {
+    switch(type.toLowerCase()) {
+      case 'pdf': return '📄';
+      case 'id': return '🆔';
+      case 'card': return '💳';
+      case 'certificate': return '🎓';
+      default: return '📝';
+    }
+  };
+
+  const getDocumentColor = (status) => {
+    return status === 'verified' 
+      ? 'bg-gradient-to-r from-green-100 to-green-50'
+      : 'bg-gradient-to-r from-yellow-100 to-yellow-50';
+  };
+
+  // Initialize state with default values
+  const [skills, setSkills] = useState([]);
+  const [documents, setDocuments] = useState([]);
+  const [workHistory, setWorkHistory] = useState([]);
+  const [education, setEducation] = useState([]);
+  const [achievements, setAchievements] = useState([]);
+
+  // Handle input changes
+  const handleInputChange = (section, field, value) => {
+    if (!employeeData) return;
+    
+    setEmployeeData(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [field]: value
+      }
+    }));
+  };
+
+  // Handle skill addition
+  const handleAddSkill = async () => {
+    if (!newSkill.name.trim()) return;
+    
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await axios.post('http://localhost:5000/api/employees/skills', {
+        name: newSkill.name,
+        level: newSkill.level,
+        category: newSkill.category
+      }, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.data.success) {
+        const skill = {
+          ...response.data.data,
+          color: getSkillColor(newSkill.level)
+        };
+        setSkills([...skills, skill]);
+        setNewSkill({ name: '', level: 'Intermediate', category: 'Technical' });
+      }
+    } catch (error) {
+      console.error('Error adding skill:', error);
+      alert('Failed to add skill. Please try again.');
+    }
+  };
+
+  // Handle file upload
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      const token = localStorage.getItem('authToken');
+      const formData = new FormData();
+      formData.append('document', file);
+      formData.append('type', file.type.split('/')[1].toUpperCase());
+      formData.append('name', file.name);
+
+      const response = await axios.post('http://localhost:5000/api/employees/documents', formData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        },
+        onUploadProgress: (progressEvent) => {
+          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(progress);
+        }
+      });
+
+      if (response.data.success) {
+        const newDocument = {
+          ...response.data.data,
+          icon: getDocumentIcon(response.data.data.type),
+          color: getDocumentColor('pending')
+        };
+        setDocuments([newDocument, ...documents]);
+        setUploadProgress(0);
+      }
+    } catch (error) {
+      console.error('Error uploading document:', error);
+      alert('Failed to upload document. Please try again.');
+      setUploadProgress(0);
+    }
+  };
+
+  // Handle save changes
+  const handleSaveChanges = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      
+      // Prepare update data
+      const updateData = {
+        name: employeeData.personalInfo.fullName,
+        email: employeeData.personalInfo.email,
+        phone: employeeData.personalInfo.phone,
+        dob: employeeData.personalInfo.dob,
+        gender: employeeData.personalInfo.gender,
+        bloodGroup: employeeData.personalInfo.bloodGroup,
+        maritalStatus: employeeData.personalInfo.maritalStatus,
+        address: employeeData.contactInfo.address,
+        city: employeeData.contactInfo.city,
+        state: employeeData.contactInfo.state,
+        country: employeeData.contactInfo.country,
+        pincode: employeeData.contactInfo.pincode,
+        emergencyContact: employeeData.contactInfo.emergencyContact,
+        emergencyContactName: employeeData.contactInfo.emergencyName,
+        accountNumber: employeeData.bankDetails.accountNumber,
+        bankName: employeeData.bankDetails.bankName,
+        branch: employeeData.bankDetails.branch,
+        ifscCode: employeeData.bankDetails.ifscCode,
+        accountType: employeeData.bankDetails.accountType
+      };
+
+      const response = await axios.put('http://localhost:5000/api/employees/profile', updateData, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.data.success) {
+        setIsEditing(false);
+        alert('Profile updated successfully!');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Failed to update profile. Please try again.');
+    }
+  };
+
+  // Clone functions (keep as is for now - you can update these to use API later)
   const cloneAchievement = (id) => {
     const achievementToClone = achievements.find(a => a.id === id);
     if (achievementToClone) {
@@ -141,79 +354,10 @@ const EmployeeProfile = () => {
     }
   };
 
-  // Handle input changes
-  const handleInputChange = (section, field, value) => {
-    setEmployeeData(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [field]: value
-      }
-    }));
-  };
-
-  // Handle skill addition
-  const handleAddSkill = () => {
-    if (!newSkill.name.trim()) return;
-    
-    const getSkillColor = (level) => {
-      switch(level) {
-        case 'Expert': return 'bg-gradient-to-r from-emerald-500 to-green-500';
-        case 'Advanced': return 'bg-gradient-to-r from-blue-500 to-cyan-500';
-        case 'Intermediate': return 'bg-gradient-to-r from-amber-500 to-orange-500';
-        default: return 'bg-gradient-to-r from-gray-500 to-gray-600';
-      }
-    };
-    
-    const skill = {
-      id: skills.length + 1,
-      name: newSkill.name,
-      level: newSkill.level,
-      category: newSkill.category,
-      color: getSkillColor(newSkill.level)
-    };
-    
-    setSkills([...skills, skill]);
-    setNewSkill({ name: '', level: 'Intermediate', category: 'Technical' });
-  };
-
-  // Handle file upload
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const newDocument = {
-      id: documents.length + 1,
-      name: file.name,
-      type: file.type.split('/')[1].toUpperCase(),
-      uploadDate: new Date().toISOString().split('T')[0],
-      size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-      status: 'pending',
-      icon: '📄',
-      color: 'bg-gradient-to-r from-gray-100 to-gray-50'
-    };
-
-    // Simulate upload progress
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 10;
-      setUploadProgress(progress);
-      
-      if (progress >= 100) {
-        clearInterval(interval);
-        setDocuments([newDocument, ...documents]);
-        setUploadProgress(0);
-      }
-    }, 100);
-  };
-
-  // Handle save changes
-  const handleSaveChanges = () => {
-    setIsEditing(false);
-  };
-
-  // Tab content
+  // Tab content component (keep existing but use employeeData)
   const TabContent = () => {
+    if (!employeeData) return null;
+
     switch(activeTab) {
       case 'personal':
         return (
@@ -559,6 +703,47 @@ const EmployeeProfile = () => {
     </div>
   );
 
+  if (loading) {
+    return (
+      <div className="min-h-screen py-6 bg-gradient-to-br from-cyan-50 via-white to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading profile data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen py-6 bg-gradient-to-br from-cyan-50 via-white to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 text-4xl mb-4">❌</div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Error Loading Profile</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!employeeData) {
+    return (
+      <div className="min-h-screen py-6 bg-gradient-to-br from-cyan-50 via-white to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-gray-600 text-4xl mb-4">👤</div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">No Profile Data Found</h2>
+          <p className="text-gray-600">Please contact HR to set up your employee profile.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen py-6 bg-gradient-to-br from-cyan-50 via-white to-blue-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -604,7 +789,9 @@ const EmployeeProfile = () => {
                   {/* Avatar */}
                   <div className="relative">
                     <div className="w-20 h-20 rounded-full border-3 border-white/40 bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-                      <span className="text-white font-bold text-2xl">JD</span>
+                      <span className="text-white font-bold text-2xl">
+                        {employeeData.personalInfo.fullName?.charAt(0) || 'E'}
+                      </span>
                     </div>
                     <div className="w-6 h-6 bg-gradient-to-r from-emerald-500 to-green-500 rounded-full border-3 border-white absolute bottom-1 right-1"></div>
                   </div>
@@ -689,11 +876,11 @@ const EmployeeProfile = () => {
               </div>
               <div className="space-y-3">
                 {workHistory.map(job => (
-                  <div key={job.id} className={`p-3 rounded-lg ${job.color} border border-blue-100 hover:border-blue-300 transition-all duration-200 hover:scale-[1.01]`}>
+                  <div key={job.id} className={`p-3 rounded-lg ${job.color || 'bg-gradient-to-r from-blue-100 to-cyan-100'} border border-blue-100 hover:border-blue-300 transition-all duration-200 hover:scale-[1.01]`}>
                     <div className="flex items-start justify-between">
                       <div className="flex items-center space-x-2">
                         <div className="w-10 h-10 rounded-md bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
-                          {job.company.charAt(0)}
+                          {job.company?.charAt(0) || 'C'}
                         </div>
                         <div>
                           <h4 className="font-bold text-gray-900 text-sm">{job.position}</h4>
@@ -725,7 +912,7 @@ const EmployeeProfile = () => {
               </div>
               <div className="space-y-3">
                 {education.map(edu => (
-                  <div key={edu.id} className={`p-3 rounded-lg ${edu.color} border border-green-100 hover:border-green-300 transition-all duration-200 hover:scale-[1.01]`}>
+                  <div key={edu.id} className={`p-3 rounded-lg ${edu.color || 'bg-gradient-to-r from-green-50 to-emerald-50'} border border-green-100 hover:border-green-300 transition-all duration-200 hover:scale-[1.01]`}>
                     <div className="flex items-start justify-between">
                       <div>
                         <h4 className="font-bold text-gray-900 text-sm">{edu.degree}</h4>
@@ -756,10 +943,10 @@ const EmployeeProfile = () => {
               </div>
               <div className="space-y-3">
                 {achievements.map(achievement => (
-                  <div key={achievement.id} className={`p-3 rounded-lg ${achievement.color} border border-amber-100 hover:border-amber-300 transition-all duration-200 hover:scale-[1.01]`}>
+                  <div key={achievement.id} className={`p-3 rounded-lg ${achievement.color || 'bg-gradient-to-r from-amber-100 to-orange-100'} border border-amber-100 hover:border-amber-300 transition-all duration-200 hover:scale-[1.01]`}>
                     <div className="flex items-start justify-between">
                       <div className="flex items-center space-x-2">
-                        <div className="text-xl">{achievement.icon}</div>
+                        <div className="text-xl">{achievement.icon || '🏆'}</div>
                         <div className="flex-1">
                           <div className="flex items-start justify-between">
                             <h4 className="font-bold text-gray-900 text-sm">{achievement.title}</h4>
@@ -786,7 +973,11 @@ const EmployeeProfile = () => {
               <h3 className="text-md font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-4">Profile Stats</h3>
               <div className="grid grid-cols-2 gap-3">
                 <div className="text-center p-3 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 border border-blue-300">
-                  <p className="text-xl font-bold text-blue-700">4</p>
+                  <p className="text-xl font-bold text-blue-700">
+                    {employeeData.employmentInfo.dateOfJoining 
+                      ? Math.floor((new Date() - new Date(employeeData.employmentInfo.dateOfJoining)) / (365.25 * 24 * 60 * 60 * 1000)) 
+                      : 0}
+                  </p>
                   <p className="text-xs font-bold text-blue-800 mt-0.5">Years Service</p>
                 </div>
                 <div className="text-center p-3 rounded-lg bg-gradient-to-br from-emerald-100 to-emerald-200 border border-emerald-300">

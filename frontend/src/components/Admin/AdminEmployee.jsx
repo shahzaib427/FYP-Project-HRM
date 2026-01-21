@@ -18,35 +18,33 @@ const AdminEmployee = () => {
   const [viewMode, setViewMode] = useState('cards'); // 'cards' or 'table'
 
   // Fetch employees
-// Fetch employees
-const fetchEmployees = async () => {
-  try {
-    setLoading(true);
-    setError('');
-    
-    console.log('📡 Fetching employees from /employees'); // Updated
-    
-    // ✅ CORRECT: No /api prefix since axiosInstance already has it
-    const res = await axiosInstance.get('/employees');
-    
-    console.log('✅ API RESPONSE:', res.data);
-    
-    if (res.data.success && res.data.data) {
-      const employeeData = Array.isArray(res.data.data) ? res.data.data : [];
-      console.log('📊 Setting employees array with length:', employeeData.length);
-      setEmployees(employeeData);
-    } else {
-      console.warn('⚠️ No valid employee data received');
-      setEmployees([]);
+  const fetchEmployees = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      console.log('📡 Fetching employees from /employees');
+      
+      const res = await axiosInstance.get('/employees');
+      
+      console.log('✅ API RESPONSE:', res.data);
+      
+      if (res.data.success && res.data.data) {
+        const employeeData = Array.isArray(res.data.data) ? res.data.data : [];
+        console.log('📊 Setting employees array with length:', employeeData.length);
+        setEmployees(employeeData);
+      } else {
+        console.warn('⚠️ No valid employee data received');
+        setEmployees([]);
+      }
+    } catch (err) {
+      console.error('❌ FULL ERROR:', err);
+      console.error('❌ Error response:', err.response?.data);
+      setError(err.response?.data?.error || 'Failed to fetch employees');
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error('❌ FULL ERROR:', err);
-    console.error('❌ Error response:', err.response?.data);
-    setError(err.response?.data?.error || 'Failed to fetch employees');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   // Filter employees
   const filteredEmployees = employees.filter(emp => {
@@ -98,28 +96,26 @@ const fetchEmployees = async () => {
     setShowDeleteModal(true);
   };
 
- const confirmDelete = async () => {
-  try {
-    // ✅ Use axiosInstance instead of raw axios
-    await axiosInstance.delete(`/employees/${employeeToDelete._id}`);
-    
-    setEmployees(employees.filter(emp => emp._id !== employeeToDelete._id));
-    setShowDeleteModal(false);
-    setEmployeeToDelete(null);
-    
-    alert('✅ Employee deleted successfully');
-  } catch (err) {
-    console.error('Error deleting employee:', err);
-    alert(err.response?.data?.message || 'Failed to delete employee');
-  }
-};
+  const confirmDelete = async () => {
+    try {
+      await axiosInstance.delete(`/employees/${employeeToDelete._id}`);
+      
+      setEmployees(employees.filter(emp => emp._id !== employeeToDelete._id));
+      setShowDeleteModal(false);
+      setEmployeeToDelete(null);
+      
+      alert('✅ Employee deleted successfully');
+    } catch (err) {
+      console.error('Error deleting employee:', err);
+      alert(err.response?.data?.message || 'Failed to delete employee');
+    }
+  };
+
   // Toggle employee status
   const handleToggleStatus = async (id, currentStatus) => {
     try {
-      const token = localStorage.getItem('authToken');
-      await axios.put(`/api/employees/${id}`, 
-        { isActive: !currentStatus }, 
-        { headers: { Authorization: `Bearer ${token}` } }
+      await axiosInstance.put(`/employees/${id}`, 
+        { isActive: !currentStatus }
       );
       
       fetchEmployees(); // Refresh list
@@ -352,10 +348,26 @@ const fetchEmployees = async () => {
                 <div className="p-4 border-b">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                      <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                        <span className="text-blue-600 font-bold text-lg">
-                          {employee.name?.charAt(0)?.toUpperCase() || '?'}
-                        </span>
+                      <div className="h-12 w-12 rounded-full overflow-hidden bg-blue-100 flex items-center justify-center">
+                        {employee.profilePicture ? (
+                          <img 
+                            src={`http://localhost:5000${employee.profilePicture}`}
+                            alt={employee.name}
+                            className="h-full w-full object-cover"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.parentElement.innerHTML = `
+                                <span class="text-blue-600 font-bold text-lg">
+                                  ${employee.name?.charAt(0)?.toUpperCase() || '?'}
+                                </span>
+                              `;
+                            }}
+                          />
+                        ) : (
+                          <span className="text-blue-600 font-bold text-lg">
+                            {employee.name?.charAt(0)?.toUpperCase() || '?'}
+                          </span>
+                        )}
                       </div>
                       <div className="ml-3">
                         <h3 className="font-semibold text-gray-900">{employee.name || 'Unnamed'}</h3>
@@ -455,10 +467,26 @@ const fetchEmployees = async () => {
                     <tr key={employee._id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                            <span className="text-blue-600 font-semibold">
-                              {employee.name?.charAt(0)?.toUpperCase() || '?'}
-                            </span>
+                          <div className="h-10 w-10 rounded-full overflow-hidden bg-blue-100 flex items-center justify-center">
+                            {employee.profilePicture ? (
+                              <img 
+                                src={`http://localhost:5000${employee.profilePicture}`}
+                                alt={employee.name}
+                                className="h-full w-full object-cover"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  e.target.parentElement.innerHTML = `
+                                    <span class="text-blue-600 font-semibold">
+                                      ${employee.name?.charAt(0)?.toUpperCase() || '?'}
+                                    </span>
+                                  `;
+                                }}
+                              />
+                            ) : (
+                              <span className="text-blue-600 font-semibold">
+                                {employee.name?.charAt(0)?.toUpperCase() || '?'}
+                              </span>
+                            )}
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">{employee.name}</div>
@@ -568,10 +596,26 @@ const fetchEmployees = async () => {
               </button>
             </div>
             <div className="flex items-center mb-4">
-              <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center mr-3">
-                <span className="text-red-600 font-bold text-lg">
-                  {employeeToDelete.name?.charAt(0)?.toUpperCase() || '?'}
-                </span>
+              <div className="h-12 w-12 rounded-full overflow-hidden bg-red-100 flex items-center justify-center mr-3">
+                {employeeToDelete.profilePicture ? (
+                  <img 
+                    src={`http://localhost:5000${employeeToDelete.profilePicture}`}
+                    alt={employeeToDelete.name}
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.parentElement.innerHTML = `
+                        <span class="text-red-600 font-bold text-lg">
+                          ${employeeToDelete.name?.charAt(0)?.toUpperCase() || '?'}
+                        </span>
+                      `;
+                    }}
+                  />
+                ) : (
+                  <span className="text-red-600 font-bold text-lg">
+                    {employeeToDelete.name?.charAt(0)?.toUpperCase() || '?'}
+                  </span>
+                )}
               </div>
               <div>
                 <p className="font-medium text-gray-900">{employeeToDelete.name}</p>
